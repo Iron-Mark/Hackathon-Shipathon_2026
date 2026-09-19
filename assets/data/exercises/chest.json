@@ -1,0 +1,53 @@
+[
+  {
+    "id": "incline_dumbbell_press",
+    "name": "Incline Dumbbell Press",
+    "category": "hypertrophy",
+    "movementRole": "press",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": ["triceps", "anterior_deltoids"],
+    "emphasis": ["upper_chest"],
+    "equipment": ["incline_bench", "dumbbells"],
+    "fatigueCost": 12,
+    "hydrationCost": 3,
+    "xpReward": 20,
+    "techniqueDifficulty": 2,
+    "codexUnlock": true,
+    "summary": "A chest pressing movement with greater emphasis on the upper chest.",
+    "techniqueNotes": ["Use a moderate incline.", "Control the lowering phase.", "Avoid turning the movement into mostly shoulder work."]
+  },
+  {
+    "id": "machine_chest_press",
+    "name": "Machine Chest Press",
+    "category": "hypertrophy",
+    "movementRole": "press",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": ["triceps", "anterior_deltoids"],
+    "emphasis": ["general_chest"],
+    "equipment": ["chest_press_machine"],
+    "fatigueCost": 10,
+    "hydrationCost": 2,
+    "xpReward": 18,
+    "techniqueDifficulty": 1,
+    "codexUnlock": true,
+    "summary": "A stable chest press variation with reduced stabilization demand.",
+    "techniqueNotes": ["Keep the torso supported.", "Use a comfortable pressing path.", "Control both directions of the movement."]
+  },
+  {
+    "id": "cable_fly",
+    "name": "Cable Fly",
+    "category": "hypertrophy",
+    "movementRole": "isolation",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": [],
+    "emphasis": ["chest_adduction"],
+    "equipment": ["cable_station"],
+    "fatigueCost": 8,
+    "hydrationCost": 2,
+    "xpReward": 16,
+    "techniqueDifficulty": 2,
+    "codexUnlock": true,
+    "summary": "An isolation-style chest movement used to complement pressing movements.",
+    "techniqueNotes": ["Keep the movement controlled.", "Maintain a slight bend in the elbows.", "Avoid using momentum."]
+  }
+]

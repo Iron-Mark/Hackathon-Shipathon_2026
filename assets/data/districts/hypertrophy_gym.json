@@ -1,0 +1,32 @@
+{
+  "id":"hypertrophy_gym",
+  "name":"Hypertrophy Gym",
+  "sceneAsset":"assets/models/hypertrophy_gym.glb",
+  "spawn":{"x":2.5,"y":0,"z":8.0},
+  "bounds":{"minX":0.5,"maxX":15.5,"minZ":0.5,"maxZ":11.5},
+  "stationIds":["incline_station_01","machine_press_station_01","cable_fly_station_01","water_station_01","recovery_mat_01"],
+  "npcIds":["hypertrophy_coach"],
+  "interactables":[
+    {"id":"hypertrophy_coach","name":"Hypertrophy Coach","type":"npc","targetId":"hypertrophy_coach","asset":"coach","x":3.0,"z":5.5,"width":0.8,"depth":0.65,"interactionRadius":1.8,"trainingEnabled":false},
+    {"id":"incline_station_01","name":"Incline Dumbbell Press","type":"exercise_station","targetId":"incline_dumbbell_press","asset":"incline_press","x":6.0,"z":3.5,"width":1.8,"depth":2.0,"interactionRadius":2.2,"trainingEnabled":true},
+    {"id":"machine_press_station_01","name":"Machine Chest Press","type":"exercise_station","targetId":"machine_chest_press","asset":"machine_chest_press","x":10.0,"z":3.0,"width":1.8,"depth":1.8,"interactionRadius":2.1,"trainingEnabled":true},
+    {"id":"cable_fly_station_01","name":"Cable Fly","type":"exercise_station","targetId":"cable_fly","asset":"cable_fly","x":13.3,"z":6.3,"width":2.2,"depth":1.2,"interactionRadius":2.1,"trainingEnabled":true},
+    {"id":"water_station_01","name":"Water Station","type":"water_station","targetId":"water_station","asset":"water_station","x":11.0,"z":10.0,"width":0.8,"depth":0.8,"interactionRadius":1.8,"trainingEnabled":false},
+    {"id":"recovery_mat_01","name":"Recovery Mat","type":"recovery_mat","targetId":"recovery_mat","asset":"recovery_mat","x":7.5,"z":10.0,"width":1.2,"depth":1.8,"interactionRadius":1.9,"trainingEnabled":false,"solid":false}
+  ],
+  "colliders":[
+    {"x":0.5,"z":3.0,"width":0.6,"depth":0.6},
+    {"x":15.5,"z":3.0,"width":0.6,"depth":0.6},
+    {"x":1.0,"z":1.5,"width":1.0,"depth":1.8}
+  ],
+  "previews":[
+    {"name":"Hypertrophy District","state":"AVAILABLE"},
+    {"name":"Strength Yard","state":"LOCKED"},
+    {"name":"Cardio Run","state":"LOCKED"},
+    {"name":"Mobility Temple","state":"LOCKED"},
+    {"name":"Recovery House","state":"FUTURE"},
+    {"name":"Macro Market","state":"FUTURE"},
+    {"name":"Arena","state":"FUTURE"}
+  ],
+  "leagues":["Physique","Strength","Endurance","Hybrid"]
+}

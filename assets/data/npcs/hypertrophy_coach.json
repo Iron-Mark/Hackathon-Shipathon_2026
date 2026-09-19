@@ -1,0 +1,10 @@
+{
+  "id":"hypertrophy_coach","name":"Hypertrophy Coach","role":"coach",
+  "dialogueIds":["coach_intro","coach_after_discovery","coach_after_training","coach_completion"],
+  "dialogue":{
+    "coach_intro":"Don't collect exercises. Build a session.\n\nExplore the three chest stations. Learn how pressing and isolation complement each other, then build your first chest day.",
+    "coach_after_discovery":"Presses and isolation serve different roles. Discover all three stations, build your session, then return to a station for one working set.",
+    "coach_after_training":"You built a session and felt the effort. Training adds fatigue and uses hydration.\n\nFinish the session at the Recovery Corner: drink water, then use the mat.",
+    "coach_completion":"A good session includes recovery. You now understand how pressing and isolation fit together. Keep that knowledge with you."
+  }
+}
