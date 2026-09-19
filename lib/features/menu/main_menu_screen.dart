@@ -194,7 +194,7 @@ class _MenuBody extends StatelessWidget {
             const SizedBox(height: IronSpacing.m),
             TextButton(
               onPressed: () => Navigator.of(context).pushNamed(Routes.support),
-              child: const Text('SUPPORT / PREMIUM'),
+              child: const Text('SUPPORT / ANTI-MONETIZATION'),
             ),
             const SizedBox(height: IronSpacing.xl),
             Text(

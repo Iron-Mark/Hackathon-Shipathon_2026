@@ -48,6 +48,23 @@ flutter run --dart-define=REVENUECAT_API_KEY=<public sdk key> \
 Without a key the Supporter screen reports "Store unavailable" and the game
 stays fully playable.
 
+## Shipaton Manila mini-hackathon entry
+
+- **Category (one per entry):** Help Apps Lose Money — hosted on a paid Vercel
+  seat, earns nothing by design; the Support screen is an anti-monetization
+  ledger whose RevenueCat adapter refuses every payment (`UnconfiguredMonetizationService`).
+- **Built with AI, prompts shown:** the brief is
+  `IRON_ASCENT_Coding_Agent_Master_Instruction.md`; the follow-up prompts are on
+  the "How it was built" slide of the demo deck.
+- **Runs + 1–2 minute demo:** https://iron-ascent-three.vercel.app and
+  https://iron-ascent-three.vercel.app/demo/
+- **Bonus 2 — FlutterFlow and its AI:** FlutterFlow project `game-q04txb` edited
+  through FlutterFlow AI (`tool/flutterflow/edit_home_page.dart`).
+- **Bonus 1 — break the agent on purpose:** not pre-recorded; run it live and
+  show the prompt (accidents do not count).
+- **Not allowed list:** nothing illegal/NSFW/malicious; the app annoys nobody
+  and harms nobody — the only "loss" is our hosting bill.
+
 ## Demo deck
 
 `docs/demo/index.html` is a self-contained slide deck built from the verified

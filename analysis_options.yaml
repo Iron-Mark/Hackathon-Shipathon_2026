@@ -12,6 +12,9 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - build/**
+    - flutterflow_workspace/**
+    # Archived FlutterFlow AI DSL; compiles inside flutterflow_workspace only.
+    - tool/flutterflow/**
     - android/**
     - ios/**
     - web/**

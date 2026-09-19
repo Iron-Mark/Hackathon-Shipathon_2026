@@ -21,10 +21,14 @@ class EntitlementState {
     this.error,
     this.offeringTitle,
     this.offeringPrice,
+    this.refusedPurchases = 0,
   });
 
   final bool premium, loading, configured, purchaseSupported;
   final String? error, offeringTitle, offeringPrice;
+
+  /// Payment attempts the anti-monetization store has turned away.
+  final int refusedPurchases;
 
   EntitlementState copyWith({
     bool? premium,
@@ -35,6 +39,7 @@ class EntitlementState {
     bool clearError = false,
     String? offeringTitle,
     String? offeringPrice,
+    int? refusedPurchases,
   }) => EntitlementState(
     premium: premium ?? this.premium,
     loading: loading ?? this.loading,
@@ -43,6 +48,7 @@ class EntitlementState {
     error: clearError ? null : error ?? this.error,
     offeringTitle: offeringTitle ?? this.offeringTitle,
     offeringPrice: offeringPrice ?? this.offeringPrice,
+    refusedPurchases: refusedPurchases ?? this.refusedPurchases,
   );
 }
 
@@ -59,26 +65,62 @@ abstract class MonetizationService extends ChangeNotifier {
       'Store unavailable right now. Core gameplay is still available.';
 }
 
-/// Used when no RevenueCat key is configured for this build.
+/// Used when no RevenueCat key is configured for this build: the
+/// anti-monetization store. It looks like a store, keeps the full
+/// MonetizationService contract, and refuses every payment while showing what
+/// hosting has cost so far. (Hackathon category: "Help Apps Lose Money".)
 class UnconfiguredMonetizationService extends MonetizationService {
-  UnconfiguredMonetizationService({this.cachedPremium = false});
+  UnconfiguredMonetizationService({
+    this.cachedPremium = false,
+    DateTime? launchedAt,
+  }) : launchedAt = launchedAt ?? defaultLaunch;
+
+  /// First production deployment on Vercel.
+  static final defaultLaunch = DateTime.utc(2026, 9, 19, 4, 58);
+
+  /// Vercel Pro seat, USD 20 / month, at roughly PHP 56.5 per USD.
+  static const monthlyCostPhp = 20 * 56.5;
+
   final bool cachedPremium;
+  final DateTime launchedAt;
+  EntitlementState _state = const EntitlementState();
 
   @override
-  EntitlementState get state => EntitlementState(
+  EntitlementState get state => _state.copyWith(
     premium: cachedPremium,
     configured: false,
-    error: 'Store not configured for this build.',
+    purchaseSupported: true,
   );
+
+  /// Hosting cost accrued since launch, in PHP. Earnings stay at zero.
+  double runningCostPhp([DateTime? now]) {
+    final elapsed = (now ?? DateTime.now().toUtc()).difference(launchedAt);
+    final seconds = elapsed.inMilliseconds / 1000;
+    return seconds <= 0 ? 0 : monthlyCostPhp * seconds / (30 * 24 * 3600);
+  }
 
   @override
   Future<void> initialize() async {}
   @override
   Future<void> refresh() async {}
+
+  /// Declines the payment. Nothing is charged; core gameplay was never gated.
   @override
-  Future<void> purchaseSupporter() async {}
+  Future<void> purchaseSupporter() async {
+    _state = _state.copyWith(
+      refusedPurchases: _state.refusedPurchases + 1,
+      error: 'Payment declined by IRON ASCENT. This app does not take money.',
+    );
+    notifyListeners();
+  }
+
   @override
-  Future<void> restorePurchases() async {}
+  Future<void> restorePurchases() async {
+    _state = _state.copyWith(
+      error: 'Nothing to restore: nobody has ever been charged.',
+    );
+    notifyListeners();
+  }
 }
 
 class RevenueCatMonetizationService extends MonetizationService {
