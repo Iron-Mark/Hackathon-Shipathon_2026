@@ -1,5 +1,26 @@
 // Static definitions. This layer deliberately has no Flutter dependency.
-enum MovementRole { press, isolation }
+enum MovementRole {
+  press('Press'),
+  isolation('Isolation');
+
+  const MovementRole(this.label);
+  final String label;
+
+  static MovementRole parse(Object? value) {
+    for (final role in values) {
+      if (role.name == value) return role;
+    }
+    throw FormatException('Unknown movementRole: $value');
+  }
+}
+
+/// Turns a snake_case content ID into a display label ("upper_chest" ->
+/// "Upper Chest"). Display text only; IDs stay stable.
+String humanize(String id) => id
+    .split('_')
+    .where((w) => w.isNotEmpty)
+    .map((w) => w[0].toUpperCase() + w.substring(1))
+    .join(' ');
 
 String requiredText(Map<String, dynamic> json, String key) {
   final value = json[key];
@@ -33,7 +54,7 @@ class Exercise {
     : id = contentId(json),
       name = requiredText(json, 'name'),
       category = requiredText(json, 'category'),
-      movementRole = MovementRole.values.byName(json['movementRole'] as String),
+      movementRole = MovementRole.parse(json['movementRole']),
       primaryMuscles = stringList(json, 'primaryMuscles'),
       secondaryMuscles = stringList(json, 'secondaryMuscles'),
       emphasis = stringList(json, 'emphasis'),
@@ -65,13 +86,20 @@ enum ObjectiveType {
 
   const ObjectiveType(this.id);
   final String id;
+
+  static ObjectiveType parse(Object? value) {
+    for (final type in values) {
+      if (type.id == value) return type;
+    }
+    throw FormatException('Unknown objective type: $value');
+  }
 }
 
 class QuestObjectiveDefinition {
   QuestObjectiveDefinition.fromJson(Map<String, dynamic> json)
     : id = contentId(json),
       label = requiredText(json, 'label'),
-      type = ObjectiveType.values.firstWhere((v) => v.id == json['type']),
+      type = ObjectiveType.parse(json['type']),
       targetCount = nonNegative(json, 'targetCount'),
       conditions = Map.unmodifiable(
         json['conditions'] as Map<String, dynamic>,
@@ -138,7 +166,7 @@ class ColliderDefinition {
 }
 
 class InteractableDefinition extends ColliderDefinition {
-  InteractableDefinition.fromJson(Map<String, dynamic> json)
+  InteractableDefinition.fromJson(super.json)
     : id = contentId(json),
       name = requiredText(json, 'name'),
       type = requiredText(json, 'type'),
@@ -147,7 +175,8 @@ class InteractableDefinition extends ColliderDefinition {
       interactionRadius = (json['interactionRadius'] as num).toDouble(),
       trainingEnabled = json['trainingEnabled'] as bool,
       solid = json['solid'] as bool? ?? true,
-      super.fromJson(json) {
+      rotationY = (json['rotationY'] as num? ?? 0).toDouble(),
+      super.fromJson() {
     if (![
           'npc',
           'exercise_station',
@@ -160,8 +189,13 @@ class InteractableDefinition extends ColliderDefinition {
     }
   }
   final String id, name, type, targetId, asset;
-  final double interactionRadius;
+  final double interactionRadius, rotationY;
   final bool trainingEnabled, solid;
+
+  bool get isNpc => type == 'npc';
+  bool get isExerciseStation => type == 'exercise_station';
+  bool get isWaterStation => type == 'water_station';
+  bool get isRecoveryMat => type == 'recovery_mat';
 }
 
 class DistrictDefinition {

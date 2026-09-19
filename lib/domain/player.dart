@@ -1,13 +1,28 @@
+// Persistent gameplay state. Pure Dart, immutable value objects.
+
 class PlayerCondition {
   PlayerCondition({int hydration = 80, int fatigue = 10})
     : hydration = hydration.clamp(0, 100),
       fatigue = fatigue.clamp(0, 100);
   final int hydration, fatigue;
+
   PlayerCondition change({int hydration = 0, int fatigue = 0}) =>
       PlayerCondition(
         hydration: this.hydration + hydration,
         fatigue: this.fatigue + fatigue,
       );
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlayerCondition &&
+      other.hydration == hydration &&
+      other.fatigue == fatigue;
+
+  @override
+  int get hashCode => Object.hash(hydration, fatigue);
+
+  @override
+  String toString() => 'Condition(hydration: $hydration, fatigue: $fatigue)';
 }
 
 enum QuestState { locked, available, active, completed }
@@ -18,31 +33,38 @@ class QuestProgress {
     this.state = QuestState.available,
     Map<String, int> objectiveProgress = const {},
     this.rewardClaimed = false,
-    this.waterAfterCoach = false,
   }) : objectiveProgress = Map.unmodifiable(objectiveProgress);
   final String questId;
   final QuestState state;
   final Map<String, int> objectiveProgress;
-  final bool rewardClaimed, waterAfterCoach;
+  final bool rewardClaimed;
+
   int count(String id) => objectiveProgress[id] ?? 0;
-  bool done(String id) => count(id) > 0;
+  bool get isActive => state == QuestState.active;
+  bool get isCompleted => state == QuestState.completed;
+
   QuestProgress copyWith({
     QuestState? state,
     Map<String, int>? objectiveProgress,
     bool? rewardClaimed,
-    bool? waterAfterCoach,
   }) => QuestProgress(
     questId: questId,
     state: state ?? this.state,
     objectiveProgress: objectiveProgress ?? this.objectiveProgress,
     rewardClaimed: rewardClaimed ?? this.rewardClaimed,
-    waterAfterCoach: waterAfterCoach ?? this.waterAfterCoach,
   );
 }
 
-int levelForXp(int xp) {
-  const thresholds = [0, 100, 250, 450, 700];
-  return thresholds.where((value) => xp >= value).length.clamp(1, 5);
+/// Level thresholds from the Systems & Data spec (section 49).
+const List<int> levelThresholds = [0, 100, 250, 450, 700];
+
+int levelForXp(int xp) =>
+    levelThresholds.where((value) => xp >= value).length.clamp(1, 5);
+
+/// XP required for the next level, or null at the level cap.
+int? xpForNextLevel(int xp) {
+  final level = levelForXp(xp);
+  return level >= levelThresholds.length ? null : levelThresholds[level];
 }
 
 class PlayerProfile {
@@ -59,6 +81,7 @@ class PlayerProfile {
        unlockedCodexIds = Set.unmodifiable(unlockedCodexIds),
        unlockedKnowledgeIds = Set.unmodifiable(unlockedKnowledgeIds),
        questProgress = Map.unmodifiable(questProgress);
+
   final String playerId;
   final int xp;
   int get level => levelForXp(xp);
@@ -67,6 +90,10 @@ class PlayerProfile {
       unlockedCodexIds,
       unlockedKnowledgeIds;
   final Map<String, QuestProgress> questProgress;
+
+  bool hasDiscovered(String exerciseId) =>
+      discoveredExerciseIds.contains(exerciseId);
+
   PlayerProfile copyWith({
     int? xp,
     PlayerCondition? condition,
@@ -96,6 +123,9 @@ class GameSettings {
   final double audioVolume, textScale;
   final bool reducedMotion, controlHints;
   final String graphicsQuality;
+
+  static const graphicsOptions = ['low', 'medium', 'high'];
+
   GameSettings copyWith({
     double? audioVolume,
     bool? reducedMotion,
@@ -115,6 +145,18 @@ class WorkoutSelection {
   WorkoutSelection([List<String> exerciseIds = const []])
     : exerciseIds = List.unmodifiable(exerciseIds);
   final List<String> exerciseIds;
+  static const maxSize = 3;
+
+  bool contains(String id) => exerciseIds.contains(id);
+
+  /// Adds or removes an exercise, refusing to grow past [maxSize].
+  WorkoutSelection toggle(String id) {
+    if (contains(id)) {
+      return WorkoutSelection(exerciseIds.where((e) => e != id).toList());
+    }
+    if (exerciseIds.length >= maxSize) return this;
+    return WorkoutSelection([...exerciseIds, id]);
+  }
 }
 
 class SaveGame {
@@ -122,12 +164,38 @@ class SaveGame {
     required this.player,
     required this.settings,
     required this.selection,
-    this.schemaVersion = 1,
+    this.schemaVersion = currentSchemaVersion,
   });
+
+  static const currentSchemaVersion = 1;
+
+  /// Canonical new-game state (Systems & Data section 65).
+  factory SaveGame.newGame(
+    String questId, {
+    GameSettings settings = const GameSettings(),
+  }) => SaveGame(
+    player: PlayerProfile(
+      questProgress: {questId: QuestProgress(questId: questId)},
+    ),
+    settings: settings,
+    selection: WorkoutSelection(),
+  );
+
   final int schemaVersion;
   final PlayerProfile player;
   final GameSettings settings;
   final WorkoutSelection selection;
+
+  SaveGame copyWith({
+    PlayerProfile? player,
+    GameSettings? settings,
+    WorkoutSelection? selection,
+  }) => SaveGame(
+    schemaVersion: schemaVersion,
+    player: player ?? this.player,
+    settings: settings ?? this.settings,
+    selection: selection ?? this.selection,
+  );
 }
 
 abstract interface class SaveRepository {

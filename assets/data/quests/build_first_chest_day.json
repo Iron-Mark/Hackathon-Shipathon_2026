@@ -10,7 +10,7 @@
     {"id":"build_three_exercise_session","label":"Build a 3-exercise chest session","type":"workout_validation","targetCount":1,"conditions":{"validator":"chest_day_mvp"}},
     {"id":"complete_working_set","label":"Complete a working set at a station","type":"training_completion","targetCount":1,"conditions":{"primaryMuscle":"chest"}},
     {"id":"return_to_coach","label":"Return to the Hypertrophy Coach","type":"npc_interaction_after_training","targetCount":1,"conditions":{"npcId":"hypertrophy_coach"}},
-    {"id":"recover","label":"Drink water, then use the Recovery Mat","type":"recovery_action","targetCount":1,"conditions":{"stationType":"recovery_mat"}}
+    {"id":"recover","label":"Recover on the Recovery Mat","type":"recovery_action","targetCount":1,"conditions":{"stationType":"recovery_mat"}}
   ],
   "reward":{"xp":100,"knowledgeIds":["chest_programming_1"]}
 }
