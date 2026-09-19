@@ -30,7 +30,8 @@ class Mat {
       'metallicFactor': metallic,
       'roughnessFactor': roughness,
     },
-    if (emissive > 0) 'emissiveFactor': [r * emissive, g * emissive, b * emissive],
+    if (emissive > 0)
+      'emissiveFactor': [r * emissive, g * emissive, b * emissive],
   };
 }
 

@@ -2,6 +2,7 @@
 // SaveRepository. Widgets call use cases here and listen for changes; they
 // never mutate domain state directly. Frame-by-frame runtime state never
 // passes through this class.
+// ignore_for_file: prefer_initializing_formals
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -227,7 +228,8 @@ class GameSession extends ChangeNotifier {
           notifyListeners();
         }
       } catch (e) {
-        _saveError = 'Progress could not be saved. '
+        _saveError =
+            'Progress could not be saved. '
             'Your current session remains active.';
         debugPrint('save failed: $e');
         notifyListeners();

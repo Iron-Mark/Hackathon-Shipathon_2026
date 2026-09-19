@@ -111,7 +111,11 @@ class RevenueCatMonetizationService extends MonetizationService {
     try {
       await Purchases.configure(PurchasesConfiguration(apiKey));
       _set(
-        _state.copyWith(configured: true, purchaseSupported: true, loading: true),
+        _state.copyWith(
+          configured: true,
+          purchaseSupported: true,
+          loading: true,
+        ),
       );
       await refresh();
     } catch (e) {
@@ -173,7 +177,7 @@ class RevenueCatMonetizationService extends MonetizationService {
     }
     _set(_state.copyWith(loading: true, clearError: true));
     try {
-      final result = await Purchases.purchasePackage(package);
+      final result = await Purchases.purchase(PurchaseParams.package(package));
       final premium = result.customerInfo.entitlements.active.containsKey(
         entitlementId,
       );

@@ -28,6 +28,10 @@ class GameEngine {
     return o != null && questProgress.count(o.id) >= o.targetCount;
   }
 
+  bool get sessionBuilt => quest.objectives
+      .where((o) => o.type == ObjectiveType.workoutValidation)
+      .every((o) => questProgress.count(o.id) >= o.targetCount);
+
   bool get trainingDone => quest.objectives
       .where((o) => o.type == ObjectiveType.trainingCompletion)
       .every((o) => questProgress.count(o.id) >= o.targetCount);

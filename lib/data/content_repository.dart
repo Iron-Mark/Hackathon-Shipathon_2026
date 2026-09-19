@@ -1,6 +1,7 @@
 // Loads and validates the bundled structured content once, then caches it.
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../domain/content.dart';
@@ -26,6 +27,12 @@ class ContentLoadException implements Exception {
 
 class ContentRepository {
   ContentRepository({AssetBundle? bundle}) : _bundle = bundle ?? rootBundle;
+
+  /// A repository that already holds validated content (tests, tools).
+  ContentRepository.preloaded(GameContent content)
+    : _bundle = rootBundle,
+      _cached = SynchronousFuture(content);
+
   final AssetBundle _bundle;
   Future<GameContent>? _cached;
 

@@ -3,7 +3,12 @@
 // tool/assets/generate_models.dart and converted by the flutter_scene hook).
 
 class ModelPlacement {
-  const ModelPlacement(this.path, {this.dx = 0, this.dz = 0, this.rotationY = 0});
+  const ModelPlacement(
+    this.path, {
+    this.dx = 0,
+    this.dz = 0,
+    this.rotationY = 0,
+  });
   final String path;
   final double dx, dz, rotationY;
 }
@@ -53,8 +58,22 @@ class AssetCatalog {
   /// Diegetic wayfinding signage rendered as text quads at runtime.
   static const signs = [
     SignDefinition('HYPERTROPHY', x: 8.0, y: 1.75, z: 0.57, accent: true),
-    SignDefinition('PRESSING', x: 8.0, y: 2.45, z: 2.0, width: 2.4, height: 0.4),
+    SignDefinition(
+      'PRESSING',
+      x: 8.0,
+      y: 2.45,
+      z: 2.0,
+      width: 2.4,
+      height: 0.4,
+    ),
     SignDefinition('CABLES', x: 13.3, y: 2.45, z: 5.0, width: 2.0, height: 0.4),
-    SignDefinition('RECOVERY', x: 9.5, y: 2.55, z: 8.6, width: 2.6, height: 0.4),
+    SignDefinition(
+      'RECOVERY',
+      x: 9.5,
+      y: 2.55,
+      z: 8.6,
+      width: 2.6,
+      height: 0.4,
+    ),
   ];
 }
