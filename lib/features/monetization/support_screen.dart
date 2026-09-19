@@ -1,7 +1,8 @@
-// Supporter / premium surface. Talks only to MonetizationService; core
-// gameplay never depends on the entitlement. Without a store key it becomes
-// the anti-monetization ledger: costs accrue, earnings stay at zero, and every
-// payment attempt is politely refused.
+// Anti-monetization surface ("Help Apps Lose Money"). Talks only to
+// MonetizationService; core gameplay never depends on the entitlement.
+// Without a store key every payment is refused; with a RevenueCat Test Store
+// key purchases are sandbox-only. Either way the hosting ledger shows costs
+// accruing against zero real revenue.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -43,17 +44,29 @@ class _SupportScreenState extends State<SupportScreen> {
       listenable: monetization,
       builder: (context, _) {
         final state = monetization.state;
-        final ledger = monetization is UnconfiguredMonetizationService
-            ? monetization
-            : null;
+        final refusing = monetization is UnconfiguredMonetizationService;
         final text = Theme.of(context).textTheme;
+        final headline = refusing
+            ? 'Try to give us money. We will say no.'
+            : monetization.isTestStore
+            ? 'Buy the supporter pack with sandbox money.'
+            : 'Support development and future expansion.';
+        final buyLabel = state.premium
+            ? 'THANK YOU'
+            : refusing
+            ? 'PAY ₱99 (WILL BE REFUSED)'
+            : state.offeringPrice != null
+            ? 'BUY SUPPORTER · ${state.offeringPrice}'
+            : 'VIEW SUPPORTER OPTION';
         return IronScreen(
-          title: ledger == null ? 'Iron Ascent Supporter' : 'Anti-Monetization',
-          subtitle: ledger == null ? null : 'Category: Help Apps Lose Money. It costs us to run and earns nothing.',
+          title: 'Anti-Monetization',
+          subtitle:
+              'Category: Help Apps Lose Money. It costs us to run and earns '
+              'nothing.',
           child: ListView(
             children: [
-              if (ledger != null) _Ledger(service: ledger, state: state),
-              if (ledger != null) const SizedBox(height: IronSpacing.l),
+              _Ledger(service: monetization, state: state),
+              const SizedBox(height: IronSpacing.l),
               IronPanel(
                 accent: state.premium,
                 padding: const EdgeInsets.all(IronSpacing.xl),
@@ -81,12 +94,7 @@ class _SupportScreenState extends State<SupportScreen> {
                       ],
                     ),
                     const SizedBox(height: IronSpacing.m),
-                    Text(
-                      ledger == null
-                          ? 'Support development and future expansion.'
-                          : 'Try to give us money. We will say no.',
-                      style: text.titleMedium,
-                    ),
+                    Text(headline, style: text.titleMedium),
                     const SizedBox(height: IronSpacing.s),
                     Text(
                       'Core fitness education remains playable without '
@@ -123,16 +131,10 @@ class _SupportScreenState extends State<SupportScreen> {
                             onPressed: state.purchaseSupported
                                 ? monetization.purchaseSupporter
                                 : null,
-                            child: Text(
-                              state.premium
-                                  ? 'THANK YOU'
-                                  : ledger == null
-                                  ? 'VIEW SUPPORTER OPTION'
-                                  : 'PAY ₱99 (WILL BE REFUSED)',
-                            ),
+                            child: Text(buyLabel),
                           ),
                           OutlinedButton(
-                            onPressed: state.configured || ledger != null
+                            onPressed: state.configured || refusing
                                 ? monetization.restorePurchases
                                 : null,
                             child: const Text('RESTORE PURCHASE'),
@@ -153,14 +155,8 @@ class _SupportScreenState extends State<SupportScreen> {
               ),
               const SizedBox(height: IronSpacing.l),
               Text(
-                ledger == null
-                    ? 'Purchases are handled by the platform store through '
-                          'RevenueCat.'
-                    : 'The RevenueCat adapter is fully wired behind '
-                          'MonetizationService; this build simply ships '
-                          'without a store key, so the adapter refuses instead '
-                          'of charging. Add REVENUECAT_API_KEY to turn it into '
-                          'a real store.',
+                '${monetization.storeLabel} The RevenueCat adapter sits behind '
+                'MonetizationService; core gameplay never asks it anything.',
                 style: text.bodySmall?.copyWith(color: IronColors.textMuted),
               ),
             ],
@@ -173,13 +169,14 @@ class _SupportScreenState extends State<SupportScreen> {
 
 class _Ledger extends StatelessWidget {
   const _Ledger({required this.service, required this.state});
-  final UnconfiguredMonetizationService service;
+  final MonetizationService service;
   final EntitlementState state;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final cost = service.runningCostPhp();
+    final cost = HostingLedger.runningCostPhp();
+    final refusing = service is UnconfiguredMonetizationService;
     Widget cell(String label, String value, Color color) => Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,19 +206,28 @@ class _Ledger extends StatelessWidget {
                 '₱${cost.toStringAsFixed(4)}',
                 IronColors.fatigue,
               ),
-              cell('Earned', '₱0.00', IronColors.hydration),
-              cell(
-                'Payments refused',
-                '${state.refusedPurchases}',
-                IronColors.accentBright,
-              ),
+              cell('Real revenue', '₱0.00', IronColors.hydration),
+              if (refusing)
+                cell(
+                  'Payments refused',
+                  '${state.refusedPurchases}',
+                  IronColors.accentBright,
+                )
+              else
+                cell(
+                  'Sandbox entitlement',
+                  state.premium ? 'ACTIVE' : 'NONE',
+                  IronColors.accentBright,
+                ),
             ],
           ),
           const SizedBox(height: IronSpacing.m),
           Text(
-            'Vercel Pro seat at USD 20 / month (≈ ₱${UnconfiguredMonetizationService.monthlyCostPhp.toStringAsFixed(0)}), '
-            'accruing since launch on ${service.launchedAt.toIso8601String().substring(0, 10)}. '
-            'Revenue is structurally impossible: no ads, no unlocks, no key.',
+            'Vercel Pro seat at USD 20 / month '
+            '(≈ ₱${HostingLedger.monthlyCostPhp.toStringAsFixed(0)}), accruing '
+            'since launch on '
+            '${HostingLedger.launchedAt.toIso8601String().substring(0, 10)}. '
+            '${service.storeLabel}',
             style: text.bodySmall?.copyWith(color: IronColors.textMuted),
           ),
         ],

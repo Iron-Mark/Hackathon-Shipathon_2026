@@ -52,8 +52,32 @@ class EntitlementState {
   );
 }
 
+/// What the deployment costs and earns. Real money never flows in: with no
+/// key the store refuses, with a Test Store key purchases are sandbox-only.
+class HostingLedger {
+  /// First production deployment on Vercel.
+  static final launchedAt = DateTime.utc(2026, 9, 19, 4, 58);
+
+  /// Vercel Pro seat, USD 20 / month, at roughly PHP 56.5 per USD.
+  static const monthlyCostPhp = 20 * 56.5;
+
+  /// Hosting cost accrued since [launchedAt] (or [since]), in PHP.
+  static double runningCostPhp([DateTime? now, DateTime? since]) {
+    final start = since ?? launchedAt;
+    final elapsed = (now ?? DateTime.now().toUtc()).difference(start);
+    final seconds = elapsed.inMilliseconds / 1000;
+    return seconds <= 0 ? 0 : monthlyCostPhp * seconds / (30 * 24 * 3600);
+  }
+}
+
 abstract class MonetizationService extends ChangeNotifier {
   EntitlementState get state;
+
+  /// Human-readable description of where purchases go.
+  String get storeLabel;
+
+  /// True when the store is RevenueCat's sandbox Test Store.
+  bool get isTestStore => false;
 
   /// Never throws; failures land in [EntitlementState.error].
   Future<void> initialize();
@@ -73,17 +97,16 @@ class UnconfiguredMonetizationService extends MonetizationService {
   UnconfiguredMonetizationService({
     this.cachedPremium = false,
     DateTime? launchedAt,
-  }) : launchedAt = launchedAt ?? defaultLaunch;
+  }) : launchedAt = launchedAt ?? HostingLedger.launchedAt;
 
-  /// First production deployment on Vercel.
-  static final defaultLaunch = DateTime.utc(2026, 9, 19, 4, 58);
-
-  /// Vercel Pro seat, USD 20 / month, at roughly PHP 56.5 per USD.
-  static const monthlyCostPhp = 20 * 56.5;
+  static const monthlyCostPhp = HostingLedger.monthlyCostPhp;
 
   final bool cachedPremium;
   final DateTime launchedAt;
   EntitlementState _state = const EntitlementState();
+
+  @override
+  String get storeLabel => 'No store key: every payment is declined.';
 
   @override
   EntitlementState get state => _state.copyWith(
@@ -93,11 +116,8 @@ class UnconfiguredMonetizationService extends MonetizationService {
   );
 
   /// Hosting cost accrued since launch, in PHP. Earnings stay at zero.
-  double runningCostPhp([DateTime? now]) {
-    final elapsed = (now ?? DateTime.now().toUtc()).difference(launchedAt);
-    final seconds = elapsed.inMilliseconds / 1000;
-    return seconds <= 0 ? 0 : monthlyCostPhp * seconds / (30 * 24 * 3600);
-  }
+  double runningCostPhp([DateTime? now]) =>
+      HostingLedger.runningCostPhp(now, launchedAt);
 
   @override
   Future<void> initialize() async {}
@@ -140,6 +160,14 @@ class RevenueCatMonetizationService extends MonetizationService {
 
   @override
   EntitlementState get state => _state;
+
+  @override
+  bool get isTestStore => apiKey.startsWith('test_');
+
+  @override
+  String get storeLabel => isTestStore
+      ? 'RevenueCat Test Store: sandbox purchases, no real money changes hands.'
+      : 'RevenueCat: purchases go through the platform store.';
 
   void _set(EntitlementState next) {
     _state = next;

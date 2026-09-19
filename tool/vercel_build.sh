@@ -18,7 +18,14 @@ git config --global --add safe.directory "$FLUTTER_HOME" || true
 flutter config --no-analytics >/dev/null 2>&1 || true
 flutter --version
 flutter pub get
-flutter build web --release
+# Optional public RevenueCat SDK key (Test Store key while the entry is in the
+# "Help Apps Lose Money" category: sandbox purchases, zero real revenue).
+DEFINES=()
+if [ -n "${REVENUECAT_API_KEY:-}" ]; then
+  DEFINES+=(--dart-define="REVENUECAT_API_KEY=${REVENUECAT_API_KEY}")
+  DEFINES+=(--dart-define="REVENUECAT_ENTITLEMENT=${REVENUECAT_ENTITLEMENT:-supporter}")
+fi
+flutter build web --release "${DEFINES[@]}"
 
 # Publish the demo deck next to the game at /demo/.
 mkdir -p build/web/demo

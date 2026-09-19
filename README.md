@@ -45,14 +45,17 @@ flutter run --dart-define=REVENUECAT_API_KEY=<public sdk key> \
             --dart-define=REVENUECAT_ENTITLEMENT=supporter
 ```
 
-Without a key the Supporter screen reports "Store unavailable" and the game
-stays fully playable.
+Without a key the store refuses payments and the game stays fully playable.
+On Vercel the key is supplied by the `REVENUECAT_API_KEY` project env var (a
+`test_…` Test Store key today; swap in platform keys before a store release).
 
 ## Shipaton Manila mini-hackathon entry
 
 - **Category (one per entry):** Help Apps Lose Money — hosted on a paid Vercel
-  seat, earns nothing by design; the Support screen is an anti-monetization
-  ledger whose RevenueCat adapter refuses every payment (`UnconfiguredMonetizationService`).
+  seat, earns nothing by design. The Anti-Monetization screen shows the hosting
+  ledger against ₱0.00 real revenue. Production is configured with a RevenueCat
+  **Test Store** key (`REVENUECAT_API_KEY` Vercel env var → `--dart-define`), so
+  purchases are sandbox-only; without a key the adapter refuses every payment.
 - **Built with AI, prompts shown:** the brief is
   `IRON_ASCENT_Coding_Agent_Master_Instruction.md`; the follow-up prompts are on
   the "How it was built" slide of the demo deck.
