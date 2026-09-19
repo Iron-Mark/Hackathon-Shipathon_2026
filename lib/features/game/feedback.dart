@@ -173,8 +173,6 @@ class FeedbackController extends ChangeNotifier {
     _advance();
   }
 
-  bool get hasPendingCards => current != null || _cards.isNotEmpty;
-
   @override
   void dispose() {
     _cardTimer?.cancel();

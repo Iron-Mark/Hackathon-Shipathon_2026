@@ -237,9 +237,6 @@ class GameSession extends ChangeNotifier {
     });
   }
 
-  /// Completes when every queued save has been attempted.
-  Future<void> flushSaves() => _saveChain;
-
   @override
   void dispose() {
     _events.close();

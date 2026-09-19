@@ -65,7 +65,6 @@ class GameRuntime {
   bool _loaded = false;
 
   bool get isLoaded => _loaded;
-  vm.Vector3 get playerPosition => _position.clone();
 
   Future<void> load() async {
     await Scene.initializeStaticResources();

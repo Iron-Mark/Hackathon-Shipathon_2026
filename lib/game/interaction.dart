@@ -1,7 +1,5 @@
 // Interaction detection: one contextual target chosen by proximity, with a
 // preference for objects roughly in front of the player.
-import 'dart:math' as math;
-
 import 'package:vector_math/vector_math.dart' as vm;
 
 import '../domain/content.dart';
@@ -34,9 +32,6 @@ class InteractionSystem {
 
   final List<Interactable> interactables;
 
-  Interactable? byId(String id) =>
-      interactables.where((i) => i.id == id).firstOrNull;
-
   /// Nearest in-range interactable. When two are similarly close, prefer the
   /// one in front of the player ([facing] is a unit XZ direction).
   Interactable? select(vm.Vector2 player, vm.Vector2 facing) {
@@ -58,8 +53,4 @@ class InteractionSystem {
     }
     return best;
   }
-
-  /// Squared distance helper for HUD ordering/debugging.
-  static double distance2(Interactable i, vm.Vector2 p) =>
-      math.pow(i.center.x - p.x, 2) + math.pow(i.center.y - p.y, 2) as double;
 }
