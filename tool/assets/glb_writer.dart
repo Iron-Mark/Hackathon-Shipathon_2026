@@ -184,8 +184,23 @@ class GlbModel {
       for (final prim in n._prims.values) {
         if (prim.indices.isEmpty) continue;
         triangles += prim.indices.length ~/ 3;
+        // Models are authored in flutter_scene's left-handed world space
+        // (+Z toward the camera side). glTF is right-handed, and the
+        // importer mirrors Z on load, so export with Z negated and the
+        // winding reversed to stay a valid CCW glTF that lands where
+        // authored.
         final pos = Float32List.fromList(prim.positions);
         final nor = Float32List.fromList(prim.normals);
+        for (var i = 2; i < pos.length; i += 3) {
+          pos[i] = -pos[i];
+          nor[i] = -nor[i];
+        }
+        final indices = List<int>.of(prim.indices);
+        for (var i = 0; i + 2 < indices.length; i += 3) {
+          final t = indices[i + 1];
+          indices[i + 1] = indices[i + 2];
+          indices[i + 2] = t;
+        }
         final min = [double.infinity, double.infinity, double.infinity];
         final max = [-double.infinity, -double.infinity, -double.infinity];
         for (var i = 0; i < pos.length; i += 3) {
@@ -214,8 +229,8 @@ class GlbModel {
         final norAcc = accessors.length - 1;
         final wide = prim.vertexCount > 65535;
         final idxBytes = wide
-            ? Uint32List.fromList(prim.indices).buffer.asUint8List()
-            : Uint16List.fromList(prim.indices).buffer.asUint8List();
+            ? Uint32List.fromList(indices).buffer.asUint8List()
+            : Uint16List.fromList(indices).buffer.asUint8List();
         final idxView = addView(idxBytes, 34963);
         accessors.add({
           'bufferView': idxView,
@@ -239,7 +254,7 @@ class GlbModel {
       nodes.add({'name': n.name});
       final json = nodes[index];
       if (n.origin.length2 > 0) {
-        json['translation'] = [n.origin.x, n.origin.y, n.origin.z];
+        json['translation'] = [n.origin.x, n.origin.y, -n.origin.z];
       }
       if (n._prims.values.any((p) => p.indices.isNotEmpty)) {
         json['mesh'] = addMesh(n);

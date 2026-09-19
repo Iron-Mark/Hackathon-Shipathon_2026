@@ -6,6 +6,7 @@ import 'app/app.dart';
 import 'application/game_session.dart';
 import 'data/content_repository.dart';
 import 'data/save_repositories.dart';
+import 'infrastructure/audio.dart';
 import 'infrastructure/monetization.dart';
 
 Future<void> main() async {
@@ -20,6 +21,8 @@ Future<void> main() async {
     saveRepository: SharedPreferencesSaveRepository(),
   );
   final monetization = createMonetizationService();
+  final audio = AudioService(volume: () => session.settings.audioVolume)
+    ..bind(session);
 
   // Content and save load in parallel with the first frame; the menu shows a
   // loading state until the session is ready. Store initialization never
@@ -27,5 +30,7 @@ Future<void> main() async {
   unawaited(session.initialize());
   unawaited(monetization.initialize());
 
-  runApp(IronAscentApp(session: session, monetization: monetization));
+  runApp(
+    IronAscentApp(session: session, monetization: monetization, audio: audio),
+  );
 }

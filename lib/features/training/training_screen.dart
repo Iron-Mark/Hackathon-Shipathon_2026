@@ -11,6 +11,7 @@ import '../../app/app.dart';
 import '../../app/theme.dart';
 import '../../domain/content.dart';
 import '../../domain/rules.dart';
+import '../../infrastructure/audio.dart';
 import '../shared/icons.dart';
 import '../shared/widgets.dart';
 
@@ -154,6 +155,12 @@ class _TrainingScreenState extends State<TrainingScreen>
   }
 
   void _scoreRep(RepRating rating) {
+    GameScope.of(context).audio.play(switch (rating) {
+      RepRating.clean => GameSound.repClean,
+      RepRating.good => GameSound.repGood,
+      RepRating.rough => GameSound.repRough,
+      RepRating.miss => GameSound.repMiss,
+    });
     _ratings.add(rating);
     _last = rating;
     _rep += 1;

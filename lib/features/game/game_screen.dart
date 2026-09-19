@@ -14,6 +14,7 @@ import '../../application/game_session.dart';
 import '../../domain/content.dart';
 import '../../domain/events.dart';
 import '../../game/game_runtime.dart';
+import '../../infrastructure/audio.dart';
 import '../shared/widgets.dart';
 import 'feedback.dart';
 import 'hud.dart';
@@ -28,6 +29,7 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late GameSession _session;
+  late AudioService _audio;
   GameRuntime? _runtime;
   Future<void>? _load;
   Object? _loadError;
@@ -43,6 +45,7 @@ class _GameScreenState extends State<GameScreen> {
     if (_initialized) return;
     _initialized = true;
     _session = GameScope.sessionOf(context);
+    _audio = GameScope.of(context).audio;
     if (!_session.isPlaying) return;
     final settings = _session.settings;
     _feedback = FeedbackController(
@@ -61,17 +64,25 @@ class _GameScreenState extends State<GameScreen> {
     });
     _events = _session.events.listen(_feedback!.handle);
     _session.addListener(_onSessionChanged);
+    _audio.startAmbience();
   }
 
   void _onSessionChanged() {
     final runtime = _runtime;
-    if (runtime == null || !_session.isPlaying) return;
+    if (runtime == null) return;
+    if (!_session.isPlaying) {
+      // The game ended underneath us (reset / return to title): drop the HUD.
+      if (mounted) setState(() {});
+      return;
+    }
     runtime.reducedMotion = _session.settings.reducedMotion;
     _feedback?.reducedMotion = _session.settings.reducedMotion;
+    _audio.refreshVolume();
   }
 
   @override
   void dispose() {
+    _audio.stopAmbience();
     _session.removeListener(_onSessionChanged);
     _events?.cancel();
     _feedback?.dispose();
@@ -95,6 +106,8 @@ class _GameScreenState extends State<GameScreen> {
     } finally {
       _panelOpen = false;
       runtime.paused = false;
+      runtime.input.clear();
+      runtime.lockInteract();
       _feedback!.suspended = false;
       if (mounted) _focus.requestFocus();
     }
@@ -185,12 +198,15 @@ class _GameScreenState extends State<GameScreen> {
       }
       return KeyEventResult.handled;
     }
-    if (_feedback!.current != null &&
-        event is KeyDownEvent &&
-        (event.logicalKey == LogicalKeyboardKey.enter ||
-            event.logicalKey == LogicalKeyboardKey.space)) {
-      _feedback!.dismissCard();
-      return KeyEventResult.handled;
+    if (_feedback!.current != null && event is KeyDownEvent) {
+      final key = event.logicalKey;
+      if (key == LogicalKeyboardKey.enter ||
+          key == LogicalKeyboardKey.space ||
+          key == LogicalKeyboardKey.keyE) {
+        _feedback!.dismissCard();
+        runtime.lockInteract();
+        return KeyEventResult.handled;
+      }
     }
     return runtime.keyboard.handle(event)
         ? KeyEventResult.handled
@@ -269,101 +285,126 @@ class _GameScreenState extends State<GameScreen> {
                 padding: padding,
                 child: ListenableBuilder(
                   listenable: session,
-                  builder: (context, _) => Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: QuestTracker(
-                          session: session,
+                  builder: (context, _) {
+                    if (!session.isPlaying) return const SizedBox.shrink();
+                    final quest = QuestTracker(
+                      session: session,
+                      compact: compact,
+                      onOpenSessionBuilder: () => _openRoute(Routes.session),
+                    );
+                    final status = Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ConditionPanel(
+                          condition: session.condition,
+                          level: session.player.level,
+                          xp: session.player.xp,
                           compact: compact,
-                          onOpenSessionBuilder: () =>
-                              _openRoute(Routes.session),
+                          onMenu: _openPauseMenu,
                         ),
-                      ),
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ConditionPanel(
-                              condition: session.condition,
-                              level: session.player.level,
-                              xp: session.player.xp,
-                              compact: compact,
-                              onMenu: _openPauseMenu,
-                            ),
-                            ListenableBuilder(
-                              listenable: feedback,
-                              builder: (context, _) =>
-                                  ToastColumn(feedback: feedback),
-                            ),
-                            if (session.saveError != null)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: IronSpacing.s,
-                                ),
-                                child: IronPanel(
-                                  accent: true,
-                                  padding: const EdgeInsets.all(IronSpacing.s),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        session.saveError!,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                      TextButton(
-                                        onPressed: session.retrySave,
-                                        child: const Text('RETRY'),
-                                      ),
-                                    ],
+                        ListenableBuilder(
+                          listenable: feedback,
+                          builder: (context, _) =>
+                              ToastColumn(feedback: feedback),
+                        ),
+                        if (session.saveError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: IronSpacing.s),
+                            child: IronPanel(
+                              accent: true,
+                              padding: const EdgeInsets.all(IronSpacing.s),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    session.saveError!,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall,
                                   ),
-                                ),
+                                  TextButton(
+                                    onPressed: session.retrySave,
+                                    child: const Text('RETRY'),
+                                  ),
+                                ],
                               ),
-                          ],
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: touch ? 120 : 0),
-                          child:
-                              ValueListenableBuilder<InteractableDefinition?>(
-                                valueListenable: runtime.target,
-                                builder: (context, target, _) =>
-                                    InteractionPrompt(
-                                      target: target,
-                                      discovered:
-                                          target != null &&
-                                          session.player.hasDiscovered(
-                                            target.targetId,
-                                          ),
-                                      controlHints:
-                                          session.settings.controlHints,
-                                      touch: touch,
+                            ),
+                          ),
+                      ],
+                    );
+                    return Stack(
+                      children: [
+                        // Wide: quest top-left, status top-right. Compact:
+                        // status first, quest stacked beneath so the panels
+                        // never overlap.
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: compact
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.topRight,
+                                      child: status,
                                     ),
-                              ),
+                                    const SizedBox(height: IronSpacing.s),
+                                    Align(
+                                      alignment: Alignment.topLeft,
+                                      child: quest,
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [quest, const Spacer(), status],
+                                ),
                         ),
-                      ),
-                      if (touch)
                         Align(
                           alignment: Alignment.bottomCenter,
-                          child:
-                              ValueListenableBuilder<InteractableDefinition?>(
-                                valueListenable: runtime.target,
-                                builder: (context, target, _) => TouchControls(
-                                  onJoystick: runtime.touch.onJoystick,
-                                  onInteract: runtime.input.pressInteract,
-                                  hasTarget: target != null,
-                                  actionLabel: _actionLabel(target, session),
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: touch ? 120 : 0),
+                            child:
+                                ValueListenableBuilder<InteractableDefinition?>(
+                                  valueListenable: runtime.target,
+                                  builder: (context, target, _) =>
+                                      InteractionPrompt(
+                                        target: target,
+                                        discovered:
+                                            target != null &&
+                                            session.player.hasDiscovered(
+                                              target.targetId,
+                                            ),
+                                        controlHints:
+                                            session.settings.controlHints,
+                                        touch: touch,
+                                      ),
                                 ),
-                              ),
+                          ),
                         ),
-                    ],
-                  ),
+                        if (touch)
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child:
+                                ValueListenableBuilder<InteractableDefinition?>(
+                                  valueListenable: runtime.target,
+                                  builder: (context, target, _) =>
+                                      TouchControls(
+                                        onJoystick: runtime.touch.onJoystick,
+                                        onInteract: runtime.input.pressInteract,
+                                        hasTarget: target != null,
+                                        actionLabel: _actionLabel(
+                                          target,
+                                          session,
+                                        ),
+                                      ),
+                                ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

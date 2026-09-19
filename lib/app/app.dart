@@ -12,6 +12,7 @@ import '../features/quests/quest_log_screen.dart';
 import '../features/session/session_builder_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/training/training_screen.dart';
+import '../infrastructure/audio.dart';
 import '../infrastructure/monetization.dart';
 import 'theme.dart';
 
@@ -34,11 +35,13 @@ class GameScope extends InheritedWidget {
     super.key,
     required this.session,
     required this.monetization,
+    required this.audio,
     required super.child,
   });
 
   final GameSession session;
   final MonetizationService monetization;
+  final AudioService audio;
 
   static GameScope of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<GameScope>()!;
@@ -55,15 +58,18 @@ class IronAscentApp extends StatelessWidget {
     super.key,
     required this.session,
     required this.monetization,
+    required this.audio,
   });
   final GameSession session;
   final MonetizationService monetization;
+  final AudioService audio;
 
   @override
   Widget build(BuildContext context) {
     return GameScope(
       session: session,
       monetization: monetization,
+      audio: audio,
       child: ListenableBuilder(
         listenable: session,
         builder: (context, _) => MaterialApp(

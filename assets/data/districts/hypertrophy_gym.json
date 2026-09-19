@@ -15,9 +15,13 @@
     {"id":"recovery_mat_01","name":"Recovery Mat","type":"recovery_mat","targetId":"recovery_mat","asset":"recovery_mat","x":7.5,"z":10.0,"width":1.2,"depth":1.8,"interactionRadius":1.9,"trainingEnabled":false,"solid":false}
   ],
   "colliders":[
-    {"x":0.5,"z":3.0,"width":0.6,"depth":0.6},
-    {"x":15.5,"z":3.0,"width":0.6,"depth":0.6},
-    {"x":1.0,"z":1.5,"width":1.0,"depth":1.8}
+    {"x":0.78,"z":1.5,"width":0.56,"depth":1.9},
+    {"x":12.2,"z":1.15,"width":1.6,"depth":0.6},
+    {"x":14.5,"z":10.9,"width":1.5,"depth":1.0},
+    {"x":5.5,"z":0.7,"width":0.5,"depth":0.5},
+    {"x":10.5,"z":0.7,"width":0.5,"depth":0.5},
+    {"x":5.9,"z":9.2,"width":0.4,"depth":1.2},
+    {"x":6.0,"z":11.0,"width":0.3,"depth":0.3}
   ],
   "previews":[
     {"name":"Hypertrophy District","state":"AVAILABLE"},

@@ -70,6 +70,8 @@ flutter:
     - assets/data/districts/
     - assets/data/npcs/
     - assets/data/knowledge/
+    - assets/models/
+    - assets/audio/
     - flutter_scene_generated/
 
   # To add assets to your application, add an assets section, like this:

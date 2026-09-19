@@ -382,9 +382,6 @@ GlbModel gymShell() {
   for (final x in [5.5, 10.5]) {
     walls.box(v3(x, 1.6, minZ + 0.15), v3(0.45, 3.2, 0.5), concreteDark);
   }
-  for (final z in [2.0, 5.0, 8.0]) {
-    walls.box(v3(cx, 3.15, z), v3(w + 0.6, 0.16, 0.16), darkSteel);
-  }
   // Windows: dusty daylight on the back wall.
   for (final x in [3.2, 8.0, 12.8]) {
     walls.box(v3(x, 2.4, minZ + 0.01), v3(2.6, 1.0, 0.04), darkSteel);

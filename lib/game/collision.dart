@@ -67,19 +67,43 @@ class CollisionWorld {
     return false;
   }
 
-  /// Moves [position] by [delta], sliding along obstacles. Returns the new
-  /// position (y preserved).
+  /// Moves [position] by [delta], then pushes the player circle out of any
+  /// overlapping box along the shortest separation so it slides along walls
+  /// and around corners instead of sticking. Returns the new position (y
+  /// preserved).
   vm.Vector3 move(vm.Vector3 position, vm.Vector2 delta, double radius) {
-    var x = position.x, z = position.z;
-    final nx = x + delta.x;
-    if (!blocked(nx, z, radius)) {
-      x = nx;
+    var x = position.x + delta.x, z = position.z + delta.y;
+    for (var iteration = 0; iteration < 4; iteration++) {
+      var resolved = false;
+      for (final c in colliders) {
+        final nx = x.clamp(c.minX, c.maxX), nz = z.clamp(c.minZ, c.maxZ);
+        final dx = x - nx, dz = z - nz;
+        final d2 = dx * dx + dz * dz;
+        if (d2 >= radius * radius) continue;
+        resolved = true;
+        if (d2 < 1e-9) {
+          // Center inside the box: exit through the nearest face.
+          final left = x - c.minX, right = c.maxX - x;
+          final front = z - c.minZ, back = c.maxZ - z;
+          final m = math.min(math.min(left, right), math.min(front, back));
+          if (m == left) {
+            x = c.minX - radius;
+          } else if (m == right) {
+            x = c.maxX + radius;
+          } else if (m == front) {
+            z = c.minZ - radius;
+          } else {
+            z = c.maxZ + radius;
+          }
+        } else {
+          final d = math.sqrt(d2);
+          final push = radius - d + 1e-4;
+          x += dx / d * push;
+          z += dz / d * push;
+        }
+      }
+      if (!resolved) break;
     }
-    final nz = z + delta.y;
-    if (!blocked(x, nz, radius)) {
-      z = nz;
-    }
-    // If we somehow started inside geometry, keep the player inside bounds.
     x = x.clamp(bounds.minX + radius, bounds.maxX - radius);
     z = z.clamp(bounds.minZ + radius, bounds.maxZ - radius);
     return vm.Vector3(x, position.y, z);

@@ -4,17 +4,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+
+import 'dart:ui' as ui;
+
 import 'package:flutter/widgets.dart'
-    show
-        Alignment,
-        Border,
-        BoxDecoration,
-        Color,
-        Container,
-        FontWeight,
-        Size,
-        Text,
-        TextStyle;
+    show Color, FontWeight, TextDirection, TextPainter, TextSpan, TextStyle;
 import 'package:flutter_scene/scene.dart';
 import 'package:vector_math/vector_math.dart' as vm;
 
@@ -36,9 +30,9 @@ class GymWorld {
   late final Node _marker;
   final List<String> loadWarnings = [];
 
-  /// Yaw applied to imported humanoids so their modelled front faces the
-  /// runtime's forward direction.
-  static const modelFacingOffset = math.pi;
+  /// Yaw applied to imported humanoids so their modelled front (+Z, toward
+  /// the camera side) matches the runtime's yaw convention.
+  static const modelFacingOffset = 0.0;
 
   static final _accent = vm.Vector4(0.95, 0.55, 0.22, 1);
 
@@ -81,9 +75,10 @@ class GymWorld {
         }
         if (def.isNpc) {
           _coachModel = model;
+          // The coach faces the entrance / camera side (+Z).
           model.rotation = vm.Quaternion.axisAngle(
             vm.Vector3(0, 1, 0),
-            modelFacingOffset + math.pi, // faces the entrance / camera
+            modelFacingOffset,
           );
         }
         node.add(model);
@@ -116,18 +111,19 @@ class GymWorld {
     root.add(_marker);
 
     for (final sign in AssetCatalog.signs) {
-      _attachSign(sign);
+      await _attachSign(sign);
     }
   }
 
   void _configureLighting(Scene scene) {
-    scene.environmentIntensity = 0.9;
-    scene.exposure = 1.2;
+    scene.environmentIntensity = 0.55;
+    scene.exposure = 0.85;
     final shadows = graphicsQuality != 'low';
+    if (graphicsQuality == 'low') scene.renderScale = 0.75;
     scene.directionalLight = DirectionalLight(
       direction: vm.Vector3(-0.35, -1.0, 0.45),
       color: vm.Vector3(1.0, 0.93, 0.82),
-      intensity: 4.5,
+      intensity: 2.6,
       castsShadow: shadows,
       shadowMapResolution: graphicsQuality == 'high' ? 2048 : 1024,
       shadowMaxDistance: 40,
@@ -212,45 +208,80 @@ class GymWorld {
   // Signage
   // ---------------------------------------------------------------------
 
-  void _attachSign(SignDefinition sign) {
-    final node = Node(name: 'sign_${sign.text}')
-      ..position = vm.Vector3(sign.x, sign.y, sign.z)
-      ..rotation = vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), sign.rotationY);
-    final aspect = sign.width / sign.height;
-    node.addComponent(
-      WidgetComponent(
-        size: Size(512, 512 / aspect),
-        worldHeight: sign.height,
-        update: const WidgetUpdatePolicy.interval(Duration(seconds: 10)),
-        input: WidgetInput.manual,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: sign.accent
-                ? const Color(0xFF2A1A10)
-                : const Color(0xFF1C1E22),
-            border: Border.all(
-              color: sign.accent
-                  ? const Color(0xFFBD5C1F)
-                  : const Color(0xFF4A4E55),
-              width: 10,
-            ),
-          ),
-          child: Text(
-            sign.text,
-            style: TextStyle(
-              color: sign.accent
-                  ? const Color(0xFFF2B27A)
-                  : const Color(0xFFE6E2D8),
-              fontSize: 512 / aspect * 0.55,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 8,
-            ),
-          ),
+  Future<void> _attachSign(SignDefinition sign) async {
+    try {
+      final texture = await _renderSignTexture(sign);
+      final w = sign.width, h = sign.height;
+      // Screen-right is world -X, so U runs from +X (0) to -X (1) to keep
+      // the text readable from the camera side.
+      final builder = GeometryBuilder(deduplicate: false)
+        ..texCoord(vm.Vector2(1, 1))
+        ..addVertex(vm.Vector3(-w / 2, -h / 2, 0))
+        ..texCoord(vm.Vector2(0, 1))
+        ..addVertex(vm.Vector3(w / 2, -h / 2, 0))
+        ..texCoord(vm.Vector2(0, 0))
+        ..addVertex(vm.Vector3(w / 2, h / 2, 0))
+        ..texCoord(vm.Vector2(1, 0))
+        ..addVertex(vm.Vector3(-w / 2, h / 2, 0))
+        ..addTriangle(0, 1, 2)
+        ..addTriangle(0, 2, 3);
+      final node =
+          Node(
+              name: 'sign_${sign.text}',
+              mesh: Mesh(builder.build(), UnlitMaterial(colorTexture: texture)),
+            )
+            ..position = vm.Vector3(sign.x, sign.y, sign.z)
+            ..rotation = vm.Quaternion.axisAngle(
+              vm.Vector3(0, 1, 0),
+              sign.rotationY,
+            );
+      root.add(node);
+    } catch (e) {
+      loadWarnings.add('sign ${sign.text}: $e');
+      debugPrint('IRON ASCENT sign skipped (${sign.text}): $e');
+    }
+  }
+
+  /// Rasterizes a wayfinding sign (text on a plate) into a small texture.
+  Future<Texture2D> _renderSignTexture(SignDefinition sign) async {
+    const height = 128.0;
+    final width = (height * sign.width / sign.height).roundToDouble();
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    final bg = sign.accent ? const Color(0xFF2A1A10) : const Color(0xFF1C1E22);
+    final frame = sign.accent
+        ? const Color(0xFFBD5C1F)
+        : const Color(0xFF4A4E55);
+    final fg = sign.accent ? const Color(0xFFF2B27A) : const Color(0xFFE6E2D8);
+    canvas.drawRect(
+      ui.Rect.fromLTWH(0, 0, width, height),
+      ui.Paint()..color = frame,
+    );
+    canvas.drawRect(
+      ui.Rect.fromLTWH(8, 8, width - 16, height - 16),
+      ui.Paint()..color = bg,
+    );
+    final painter = TextPainter(
+      text: TextSpan(
+        text: sign.text,
+        style: TextStyle(
+          color: fg,
+          fontSize: height * 0.5,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 6,
         ),
       ),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: width - 24);
+    painter.paint(
+      canvas,
+      ui.Offset((width - painter.width) / 2, (height - painter.height) / 2),
     );
-    root.add(node);
+    final image = await recorder.endRecording().toImage(
+      width.toInt(),
+      height.toInt(),
+    );
+    return Texture2D.fromImage(image);
   }
 
   // ---------------------------------------------------------------------

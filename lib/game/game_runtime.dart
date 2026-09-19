@@ -44,6 +44,11 @@ class GameRuntime {
   /// While true the world keeps rendering but input is ignored (panels open).
   bool paused = false;
 
+  /// Interact presses are ignored for a moment after a panel closes so the
+  /// key that closed it cannot immediately re-open it.
+  double _interactCooldown = 0;
+  void lockInteract([double seconds = 0.35]) => _interactCooldown = seconds;
+
   static const playerRadius = 0.32;
   static const walkSpeed = 3.4; // m/s
   static const cameraOffset = (x: 0.0, y: 9.2, z: 6.8);
@@ -100,14 +105,22 @@ class GameRuntime {
 
   void tick(double dt) {
     if (!_loaded) return;
-    dt = dt.clamp(0.0, 0.05);
+    // Sub-step long frames so slow devices keep real-time speed without
+    // tunnelling through thin colliders.
+    dt = dt.clamp(0.0, 0.4);
+    final steps = (dt / 0.05).ceil().clamp(1, 8);
     final move = paused ? vm.Vector2.zero() : input.movement;
-    final wantInteract = input.consumeInteract() && !paused;
+    final pressed = input.consumeInteract();
+    final wantInteract = pressed && !paused && _interactCooldown <= 0;
+    _interactCooldown = math.max(0, _interactCooldown - dt);
 
     final velocity = (_right * move.x + _forward * move.y) * walkSpeed;
     final moving = velocity.length2 > 1e-4;
     if (moving) {
-      _position = collision.move(_position, velocity * dt, playerRadius);
+      final stepDelta = velocity * (dt / steps);
+      for (var i = 0; i < steps; i++) {
+        _position = collision.move(_position, stepDelta, playerRadius);
+      }
       _facing = velocity.normalized();
       final targetYaw = math.atan2(_facing.x, _facing.y);
       _yaw = _lerpAngle(

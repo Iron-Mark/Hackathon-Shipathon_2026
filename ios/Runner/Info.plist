@@ -66,5 +66,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- flutter_scene renders through Flutter GPU on native platforms. -->
+	<key>FLTEnableFlutterGPU</key>
+	<true/>
 </dict>
 </plist>

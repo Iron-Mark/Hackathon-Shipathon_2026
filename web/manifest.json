@@ -1,11 +1,11 @@
 {
-    "name": "iron_ascent",
-    "short_name": "iron_ascent",
+    "name": "IRON ASCENT",
+    "short_name": "IRON ASCENT",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "IRON ASCENT: learn fitness by playing it.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

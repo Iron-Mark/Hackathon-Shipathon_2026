@@ -31,10 +31,11 @@ class KeyboardInputAdapter {
   final Set<LogicalKeyboardKey> _down = {};
   vm.Vector2 _keyboardMovement = vm.Vector2.zero();
 
+  /// Enter is deliberately not an interact key: it confirms dialogs, and a
+  /// confirm must never re-trigger the interaction that opened them.
   static final interactKeys = {
     LogicalKeyboardKey.keyE,
     LogicalKeyboardKey.space,
-    LogicalKeyboardKey.enter,
   };
 
   /// Returns true when the key is part of the gameplay control scheme.
