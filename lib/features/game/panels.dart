@@ -181,50 +181,52 @@ Future<bool?> showExerciseInspect(
 
 enum PauseAction { resume, codex, quests, session, map, arena, settings, title }
 
-Future<PauseAction?> showPauseMenu(BuildContext context) =>
-    showDialog<PauseAction>(
-      context: context,
-      builder: (context) {
-        Widget item(String label, PauseAction action, {bool primary = false}) =>
-            Padding(
-              padding: const EdgeInsets.only(bottom: IronSpacing.s),
-              child: primary
-                  ? FilledButton(
-                      autofocus: true,
-                      onPressed: () => Navigator.of(context).pop(action),
-                      child: Text(label),
-                    )
-                  : OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(action),
-                      child: Text(label),
-                    ),
-            );
-        return _panelShell(
-          context,
-          width: 360,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('PAUSED', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: IronSpacing.l),
-              item('RESUME', PauseAction.resume, primary: true),
-              item('CODEX', PauseAction.codex),
-              item('QUEST LOG', PauseAction.quests),
-              item('SESSION BUILDER', PauseAction.session),
-              item('IRON MAP', PauseAction.map),
-              item('ARENA', PauseAction.arena),
-              item('SETTINGS', PauseAction.settings),
-              const SizedBox(height: IronSpacing.s),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(PauseAction.title),
-                child: const Text('RETURN TO TITLE'),
-              ),
-            ],
-          ),
+Future<PauseAction?> showPauseMenu(
+  BuildContext context, {
+  bool embedded = false,
+}) => showDialog<PauseAction>(
+  context: context,
+  builder: (context) {
+    Widget item(String label, PauseAction action, {bool primary = false}) =>
+        Padding(
+          padding: const EdgeInsets.only(bottom: IronSpacing.s),
+          child: primary
+              ? FilledButton(
+                  autofocus: true,
+                  onPressed: () => Navigator.of(context).pop(action),
+                  child: Text(label),
+                )
+              : OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(action),
+                  child: Text(label),
+                ),
         );
-      },
+    return _panelShell(
+      context,
+      width: 360,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('PAUSED', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: IronSpacing.l),
+          item('RESUME', PauseAction.resume, primary: true),
+          item('CODEX', PauseAction.codex),
+          item('QUEST LOG', PauseAction.quests),
+          item('SESSION BUILDER', PauseAction.session),
+          item('IRON MAP', PauseAction.map),
+          item('ARENA', PauseAction.arena),
+          item('SETTINGS', PauseAction.settings),
+          const SizedBox(height: IronSpacing.s),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(PauseAction.title),
+            child: Text(embedded ? 'EXIT GAME' : 'RETURN TO TITLE'),
+          ),
+        ],
+      ),
     );
+  },
+);
 
 /// Maps a pause action to its route (null for resume/title).
 String? routeForPauseAction(PauseAction action) => switch (action) {

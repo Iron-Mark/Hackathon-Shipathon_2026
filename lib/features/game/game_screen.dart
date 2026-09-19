@@ -175,11 +175,16 @@ class _GameScreenState extends State<GameScreen> {
   );
 
   Future<void> _openPauseMenu() async {
-    final action = await _withPanel(() => showPauseMenu(context));
+    final scope = GameScope.of(context);
+    final action = await _withPanel(
+      () => showPauseMenu(context, embedded: scope.embed.embedded),
+    );
     if (!mounted || action == null) return;
     if (action == PauseAction.title) {
       _session.leaveToMenu();
       Navigator.of(context).popUntil((r) => r.settings.name == Routes.menu);
+      // Tell an embedding host (FlutterFlow WebView / iframe) we are done.
+      if (scope.embed.embedded) scope.bridge.exit();
       return;
     }
     final route = routeForPauseAction(action);

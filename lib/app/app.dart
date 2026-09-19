@@ -13,6 +13,7 @@ import '../features/session/session_builder_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/training/training_screen.dart';
 import '../infrastructure/audio.dart';
+import '../infrastructure/host_bridge.dart';
 import '../infrastructure/monetization.dart';
 import 'theme.dart';
 
@@ -36,12 +37,16 @@ class GameScope extends InheritedWidget {
     required this.session,
     required this.monetization,
     required this.audio,
+    required this.embed,
+    required this.bridge,
     required super.child,
   });
 
   final GameSession session;
   final MonetizationService monetization;
   final AudioService audio;
+  final EmbedConfig embed;
+  final HostBridge bridge;
 
   static GameScope of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<GameScope>()!;
@@ -54,15 +59,19 @@ class GameScope extends InheritedWidget {
 }
 
 class IronAscentApp extends StatelessWidget {
-  const IronAscentApp({
+  IronAscentApp({
     super.key,
     required this.session,
     required this.monetization,
     required this.audio,
-  });
+    this.embed = const EmbedConfig(),
+    HostBridge? bridge,
+  }) : bridge = bridge ?? _NoBridge();
   final GameSession session;
   final MonetizationService monetization;
   final AudioService audio;
+  final EmbedConfig embed;
+  final HostBridge bridge;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +79,8 @@ class IronAscentApp extends StatelessWidget {
       session: session,
       monetization: monetization,
       audio: audio,
+      embed: embed,
+      bridge: bridge,
       child: ListenableBuilder(
         listenable: session,
         builder: (context, _) => MaterialApp(
@@ -108,4 +119,9 @@ class IronAscentApp extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NoBridge extends HostBridge {
+  @override
+  void post(String type, [Map<String, Object?> data = const {}]) {}
 }

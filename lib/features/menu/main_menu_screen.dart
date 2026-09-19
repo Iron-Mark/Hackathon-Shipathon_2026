@@ -5,8 +5,48 @@ import '../../app/theme.dart';
 import '../../application/game_session.dart';
 import '../shared/widgets.dart';
 
-class MainMenuScreen extends StatelessWidget {
+class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
+
+  @override
+  State<MainMenuScreen> createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> {
+  bool _autoStarted = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final scope = GameScope.of(context);
+    if (!scope.embed.embedded || _autoStarted) return;
+    // Embedded hosts skip the title: continue the save or start fresh, once.
+    if (scope.session.phase == SessionPhase.menu) {
+      _autoStarted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (!scope.session.continueGame()) scope.session.startNewGame();
+        Navigator.of(context).pushNamed(Routes.game);
+      });
+    } else {
+      scope.session.addListener(_onSessionReady);
+    }
+  }
+
+  void _onSessionReady() {
+    final scope = GameScope.of(context);
+    if (_autoStarted || scope.session.phase != SessionPhase.menu) return;
+    scope.session.removeListener(_onSessionReady);
+    _autoStarted = true;
+    if (!scope.session.continueGame()) scope.session.startNewGame();
+    Navigator.of(context).pushNamed(Routes.game);
+  }
+
+  @override
+  void dispose() {
+    GameScope.sessionOf(context).removeListener(_onSessionReady);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

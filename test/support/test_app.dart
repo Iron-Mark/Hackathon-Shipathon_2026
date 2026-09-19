@@ -8,6 +8,7 @@ import 'package:iron_ascent/data/content_repository.dart';
 import 'package:iron_ascent/data/save_repositories.dart';
 import 'package:iron_ascent/domain/content.dart';
 import 'package:iron_ascent/infrastructure/audio.dart';
+import 'package:iron_ascent/infrastructure/host_bridge.dart';
 import 'package:iron_ascent/infrastructure/monetization.dart';
 
 import 'test_content.dart';
@@ -35,9 +36,18 @@ Widget wrap(
     session: session,
     monetization: UnconfiguredMonetizationService(),
     audio: AudioService(volume: () => 0),
+    embed: const EmbedConfig(),
+    bridge: RecordingHostBridge(),
     child: MediaQuery(
       data: MediaQueryData(size: size),
       child: MaterialApp(theme: buildIronTheme(), home: child),
     ),
   );
+}
+
+class RecordingHostBridge extends HostBridge {
+  final List<String> types = [];
+  @override
+  void post(String type, [Map<String, Object?> data = const {}]) =>
+      types.add(type);
 }

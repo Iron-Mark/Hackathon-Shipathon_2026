@@ -48,6 +48,31 @@ flutter run --dart-define=REVENUECAT_API_KEY=<public sdk key> \
 Without a key the Supporter screen reports "Store unavailable" and the game
 stays fully playable.
 
+## Deployment
+
+Production: https://iron-ascent-three.vercel.app (Vercel project `iron-ascent`,
+Git-linked to `main`; `vercel.json` + `tool/vercel_build.sh` install Flutter and
+publish `build/web`).
+
+## Embedding in FlutterFlow (or any host app)
+
+The 3D runtime depends on `flutter_scene` (build hook, Flutter GPU flags,
+Flutter 3.47+), which FlutterFlow custom code cannot host, so integrate the
+deployed web build through a WebView:
+
+1. Add a **WebView** widget (full page, JavaScript enabled) with URL
+   `https://iron-ascent-three.vercel.app/?embed=1`.
+2. `?embed=1` skips the title screen: it continues the device's save or starts
+   a new game, and the pause menu shows **EXIT GAME** instead of Return to
+   Title.
+3. Optional: register a JavaScript channel named `IronAscent` on the WebView
+   (or listen for `message` events on an iframe host). The game posts JSON
+   strings `{"source":"iron-ascent","type":...}` with types `ready`,
+   `progress` (`level`, `xp`), `quest_complete` (`questId`) and `exit`, so the
+   host can close the game view or reflect progress.
+4. Recommended: landscape or full-screen page, WebGL2-capable device (any
+   modern phone), hardware acceleration left on.
+
 ## Layout
 
 ```text
