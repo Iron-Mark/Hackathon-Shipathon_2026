@@ -13,6 +13,7 @@ import '../features/session/session_builder_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/training/training_screen.dart';
 import '../infrastructure/audio.dart';
+import '../infrastructure/gpu_watchdog.dart';
 import '../infrastructure/host_bridge.dart';
 import '../infrastructure/monetization.dart';
 import 'theme.dart';
@@ -39,6 +40,7 @@ class GameScope extends InheritedWidget {
     required this.audio,
     required this.embed,
     required this.bridge,
+    required this.watchdog,
     required super.child,
   });
 
@@ -47,6 +49,7 @@ class GameScope extends InheritedWidget {
   final AudioService audio;
   final EmbedConfig embed;
   final HostBridge bridge;
+  final GpuWatchdog watchdog;
 
   static GameScope of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<GameScope>()!;
@@ -66,12 +69,15 @@ class IronAscentApp extends StatelessWidget {
     required this.audio,
     this.embed = const EmbedConfig(),
     HostBridge? bridge,
-  }) : bridge = bridge ?? _NoBridge();
+    GpuWatchdog? watchdog,
+  }) : bridge = bridge ?? _NoBridge(),
+       watchdog = watchdog ?? createGpuWatchdog();
   final GameSession session;
   final MonetizationService monetization;
   final AudioService audio;
   final EmbedConfig embed;
   final HostBridge bridge;
+  final GpuWatchdog watchdog;
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +87,7 @@ class IronAscentApp extends StatelessWidget {
       audio: audio,
       embed: embed,
       bridge: bridge,
+      watchdog: watchdog,
       child: ListenableBuilder(
         listenable: session,
         builder: (context, _) => MaterialApp(

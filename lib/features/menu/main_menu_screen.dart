@@ -19,8 +19,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final scope = GameScope.of(context);
-    if (!scope.embed.embedded || _autoStarted) return;
-    // Embedded hosts skip the title: continue the save or start fresh, once.
+    if (!scope.embed.autoResume || _autoStarted) return;
+    // Embedded hosts and watchdog reloads skip the title: continue the save
+    // or start fresh, once.
     if (scope.session.phase == SessionPhase.menu) {
       _autoStarted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {

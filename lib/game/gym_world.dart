@@ -133,6 +133,8 @@ class GymWorld {
       intensity: 2.6,
       castsShadow: shadows,
       shadowMapResolution: graphicsQuality == 'high' ? 2048 : 1024,
+      // One 40m gym: two cascades cover it; four just doubles shadow passes.
+      shadowCascadeCount: 2,
       shadowMaxDistance: 40,
       shadowSoftness: 0.06,
     );

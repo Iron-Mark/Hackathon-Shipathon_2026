@@ -113,7 +113,7 @@ Uint8List ico(Map<int, Uint8List> pngs) {
   return out.toBytes();
 }
 
-late final List<int> _crcTable = List.generate(256, (n) {
+final List<int> _crcTable = List.generate(256, (n) {
   var c = n;
   for (var k = 0; k < 8; k++) {
     c = (c & 1) != 0 ? 0xEDB88320 ^ (c >> 1) : c >> 1;

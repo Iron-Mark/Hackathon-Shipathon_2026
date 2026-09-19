@@ -2,6 +2,7 @@
 // interactions to application use cases and turns domain events into
 // feedback. Frame state stays inside GameRuntime.
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ import '../../domain/content.dart';
 import '../../domain/events.dart';
 import '../../game/game_runtime.dart';
 import '../../infrastructure/audio.dart';
+import '../../infrastructure/gpu_watchdog.dart';
 import '../shared/widgets.dart';
 import 'feedback.dart';
 import 'hud.dart';
@@ -30,6 +32,8 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   late GameSession _session;
   late AudioService _audio;
+  late GpuWatchdog _watchdog;
+  Timer? _recoverTimer;
   GameRuntime? _runtime;
   Future<void>? _load;
   Object? _loadError;
@@ -46,6 +50,7 @@ class _GameScreenState extends State<GameScreen> {
     _initialized = true;
     _session = GameScope.sessionOf(context);
     _audio = GameScope.of(context).audio;
+    _watchdog = GameScope.of(context).watchdog;
     if (!_session.isPlaying) return;
     final settings = _session.settings;
     _feedback = FeedbackController(
@@ -58,10 +63,17 @@ class _GameScreenState extends State<GameScreen> {
       reducedMotion: settings.reducedMotion,
       graphicsQuality: settings.graphicsQuality,
     );
-    _load = _runtime!.load().catchError((Object e, StackTrace s) {
-      debugPrint('Gym scene failed to load: $e\n$s');
-      _loadError = e;
-    });
+    _load = _runtime!
+        .load()
+        .then((_) {
+          // The GPU context exists once the scene has loaded; watch it from here.
+          _watchdog.install();
+          _watchdog.contextLost.addListener(_onContextLost);
+        })
+        .catchError((Object e, StackTrace s) {
+          debugPrint('Gym scene failed to load: $e\n$s');
+          _loadError = e;
+        });
     _events = _session.events.listen(_feedback!.handle);
     _session.addListener(_onSessionChanged);
     _audio.startAmbience();
@@ -80,8 +92,19 @@ class _GameScreenState extends State<GameScreen> {
     _audio.refreshVolume();
   }
 
+  void _onContextLost() {
+    if (!_watchdog.contextLost.value || _recoverTimer != null) return;
+    if (mounted) setState(() {});
+    // Give the pending save write a moment to land, then restart into it.
+    _recoverTimer = Timer(const Duration(milliseconds: 1200), () {
+      _watchdog.recover();
+    });
+  }
+
   @override
   void dispose() {
+    _recoverTimer?.cancel();
+    _watchdog.contextLost.removeListener(_onContextLost);
     _audio.stopAmbience();
     _session.removeListener(_onSessionChanged);
     _events?.cancel();
@@ -267,6 +290,7 @@ class _GameScreenState extends State<GameScreen> {
             return const _LoadingView();
           }
           if (_loadError != null) return _ErrorView(error: _loadError!);
+          if (_watchdog.contextLost.value) return const _RecoveringView();
           return _buildGame(context, session);
         },
       ),
@@ -279,6 +303,14 @@ class _GameScreenState extends State<GameScreen> {
     final compact = IronBreakpoints.isCompact(context);
     final touch = _touch;
     final padding = EdgeInsets.all(compact ? IronSpacing.s : IronSpacing.l);
+    // Phones report 2.5-3.5x pixel ratios; rendering the world at full
+    // density there triples GPU memory and fill cost for no visible gain on
+    // low-poly geometry, and is the usual trigger for mobile WebGL context
+    // loss. HUD text stays crisp because only the SceneView is capped.
+    final pixelRatio = math.min(
+      MediaQuery.devicePixelRatioOf(context),
+      compact ? 1.5 : 2.0,
+    );
 
     return Focus(
       focusNode: _focus,
@@ -307,6 +339,7 @@ class _GameScreenState extends State<GameScreen> {
             SceneView(
               runtime.scene,
               cameraBuilder: (_) => runtime.camera,
+              pixelRatio: pixelRatio,
               onTick: (_, dt) => _safeTick(runtime, dt),
             ),
             // HUD (rebuilds on application state only).
@@ -463,6 +496,35 @@ class _GameScreenState extends State<GameScreen> {
     if (target.isWaterStation) return 'Drink';
     if (target.isRecoveryMat) return 'Recover';
     return 'Inspect';
+  }
+}
+
+class _RecoveringView extends StatelessWidget {
+  const _RecoveringView();
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('DISPLAY RESET', style: text.headlineMedium),
+          const SizedBox(height: IronSpacing.m),
+          const SizedBox(
+            width: 220,
+            child: LinearProgressIndicator(color: IronColors.accent),
+          ),
+          const SizedBox(height: IronSpacing.m),
+          Text(
+            'Your device dropped the graphics context. '
+            'Reloading the gym from your save...',
+            textAlign: TextAlign.center,
+            style: text.bodyMedium,
+          ),
+        ],
+      ),
+    );
   }
 }
 

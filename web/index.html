@@ -29,8 +29,27 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+
   <title>IRON ASCENT</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Joystick drags must never become browser gestures: no pull-to-refresh,
+       overscroll bounce, pinch zoom or text selection while playing. The
+       background matches the gym backdrop so a reload never flashes white. */
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #2B2E33;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
 </head>
 <body>
   <!--

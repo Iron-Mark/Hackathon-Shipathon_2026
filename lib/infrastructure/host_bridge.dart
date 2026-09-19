@@ -5,15 +5,26 @@ import 'host_bridge_stub.dart'
     if (dart.library.js_interop) 'host_bridge_web.dart';
 
 class EmbedConfig {
-  const EmbedConfig({this.embedded = false});
+  const EmbedConfig({this.embedded = false, bool resume = false})
+    : _resume = resume; // ignore: prefer_initializing_formals
 
-  /// Reads `?embed=1` from the page URL (query string, before the `#` route).
+  /// Reads `?embed=1` and `?resume=1` from the page URL (query string, before
+  /// the `#` route). `resume` is set by the GPU watchdog when it reloads the
+  /// page after a lost rendering context.
   factory EmbedConfig.fromUri(Uri uri) {
-    final value = uri.queryParameters['embed'];
-    return EmbedConfig(embedded: value == '1' || value == 'true');
+    bool flag(String key) {
+      final value = uri.queryParameters[key];
+      return value == '1' || value == 'true';
+    }
+
+    return EmbedConfig(embedded: flag('embed'), resume: flag('resume'));
   }
 
   final bool embedded;
+  final bool _resume;
+
+  /// Skip the title screen and continue the save (or start fresh) at once.
+  bool get autoResume => embedded || _resume;
 }
 
 abstract class HostBridge {

@@ -8,6 +8,7 @@ import 'package:iron_ascent/data/content_repository.dart';
 import 'package:iron_ascent/data/save_repositories.dart';
 import 'package:iron_ascent/domain/content.dart';
 import 'package:iron_ascent/infrastructure/audio.dart';
+import 'package:iron_ascent/infrastructure/gpu_watchdog.dart';
 import 'package:iron_ascent/infrastructure/host_bridge.dart';
 import 'package:iron_ascent/infrastructure/monetization.dart';
 
@@ -38,6 +39,7 @@ Widget wrap(
     audio: AudioService(volume: () => 0),
     embed: const EmbedConfig(),
     bridge: RecordingHostBridge(),
+    watchdog: createGpuWatchdog(),
     child: MediaQuery(
       data: MediaQueryData(size: size),
       child: MaterialApp(theme: buildIronTheme(), home: child),

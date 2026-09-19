@@ -22,6 +22,24 @@ void main() {
       );
       expect(EmbedConfig.fromUri(Uri.parse('file:///app')).embedded, isFalse);
     });
+
+    test('?resume=1 auto-continues without treating the page as embedded', () {
+      final resumed = EmbedConfig.fromUri(
+        Uri.parse('https://x.test/?resume=1'),
+      );
+      expect(resumed.autoResume, isTrue);
+      expect(resumed.embedded, isFalse);
+
+      final embedded = EmbedConfig.fromUri(
+        Uri.parse('https://x.test/?embed=1'),
+      );
+      expect(embedded.autoResume, isTrue);
+
+      expect(
+        EmbedConfig.fromUri(Uri.parse('https://x.test/')).autoResume,
+        isFalse,
+      );
+    });
   });
 
   group('host bridge', () {
