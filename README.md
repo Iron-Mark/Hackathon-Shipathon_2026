@@ -102,6 +102,11 @@ approve `flutterflow_ai`, and drive the FlutterFlow project from chat, e.g.:
 Useful CLI checks from inside `flutterflow_workspace/`: `flutterflow ai status
 <project-id>`, `flutterflow ai doctor`, `flutterflow ai context-check`.
 
+Current state: FlutterFlow project **game** (`game-q04txb`) has its `HomePage`
+app bar titled IRON ASCENT and a full-body `IronAscentGame` WebView loading
+`https://iron-ascent-three.vercel.app/?embed=1` (pushed with the edit flow kept
+in `tool/flutterflow/edit_home_page.dart`).
+
 ## Layout
 
 ```text

@@ -13,6 +13,7 @@
 set -euo pipefail
 
 WORKSPACE="${FF_WORKSPACE:-flutterflow_workspace}"
+FF_PROJECT_ID="${FF_PROJECT_ID:-game-q04txb}" # FlutterFlow project "game"
 export PATH="$HOME/.pub-cache/bin:$PATH"
 
 if ! command -v dart >/dev/null 2>&1; then
