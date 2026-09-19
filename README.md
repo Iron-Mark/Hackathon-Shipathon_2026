@@ -48,6 +48,12 @@ flutter run --dart-define=REVENUECAT_API_KEY=<public sdk key> \
 Without a key the Supporter screen reports "Store unavailable" and the game
 stays fully playable.
 
+## Demo deck
+
+`docs/demo/index.html` is a self-contained slide deck built from the verified
+gameplay screenshots (arrow keys / swipe). It is published with the game at
+https://iron-ascent-three.vercel.app/demo/ .
+
 ## Deployment
 
 Production: https://iron-ascent-three.vercel.app (Vercel project `iron-ascent`,

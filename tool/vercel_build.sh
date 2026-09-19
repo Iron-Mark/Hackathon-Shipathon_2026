@@ -19,3 +19,7 @@ flutter config --no-analytics >/dev/null 2>&1 || true
 flutter --version
 flutter pub get
 flutter build web --release
+
+# Publish the demo deck next to the game at /demo/.
+mkdir -p build/web/demo
+cp -r docs/demo/. build/web/demo/
