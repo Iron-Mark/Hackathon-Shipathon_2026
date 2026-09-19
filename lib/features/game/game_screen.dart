@@ -191,6 +191,20 @@ class _GameScreenState extends State<GameScreen> {
     if (route != null) await _openRoute(route);
   }
 
+  bool _tickErrorReported = false;
+
+  /// An exception inside the frame tick must never blank or stall the view.
+  void _safeTick(GameRuntime runtime, double dt) {
+    try {
+      runtime.tick(dt);
+    } catch (e, s) {
+      if (!_tickErrorReported) {
+        _tickErrorReported = true;
+        debugPrint('IRON ASCENT tick error: $e\n$s');
+      }
+    }
+  }
+
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     final runtime = _runtime;
     if (runtime == null || _panelOpen) return KeyEventResult.ignored;
@@ -279,10 +293,21 @@ class _GameScreenState extends State<GameScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
+            // Backdrop in the gym's floor tone: a dropped frame (context
+            // hiccup, resize) reads as a dim flicker rather than pure black.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF3A3D42), Color(0xFF2B2E33)],
+                ),
+              ),
+            ),
             SceneView(
               runtime.scene,
               cameraBuilder: (_) => runtime.camera,
-              onTick: (_, dt) => runtime.tick(dt),
+              onTick: (_, dt) => _safeTick(runtime, dt),
             ),
             // HUD (rebuilds on application state only).
             SafeArea(

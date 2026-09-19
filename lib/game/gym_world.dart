@@ -41,6 +41,10 @@ class GymWorld {
     _configureLighting(scene);
 
     final gym = await _load(AssetCatalog.gym, fallback: _fallbackGym);
+    // The shell is always on screen; skipping its frustum test removes the
+    // one way a stale/imprecise bound could blank the floor and walls for a
+    // frame while the camera moves.
+    _disableCulling(gym);
     root.add(gym);
 
     for (final def in district.interactables) {
@@ -118,6 +122,9 @@ class GymWorld {
   void _configureLighting(Scene scene) {
     scene.environmentIntensity = 0.55;
     scene.exposure = 0.85;
+    // Single-sample targets + FXAA: avoids MSAA resolve paths that some
+    // WebGL/ANGLE drivers drop frames on, and is cheaper on mobile GPUs.
+    scene.antiAliasingMode = AntiAliasingMode.fxaa;
     final shadows = graphicsQuality != 'low';
     if (graphicsQuality == 'low') scene.renderScale = 0.75;
     scene.directionalLight = DirectionalLight(
@@ -132,6 +139,13 @@ class GymWorld {
     if (graphicsQuality == 'high') {
       scene.ambientOcclusion.enabled = true;
       scene.ambientOcclusion.intensity = 0.8;
+    }
+  }
+
+  void _disableCulling(Node node) {
+    node.frustumCulled = false;
+    for (final child in node.children) {
+      _disableCulling(child);
     }
   }
 

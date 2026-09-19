@@ -104,6 +104,11 @@ class GameRuntime {
 
   void tick(double dt) {
     if (!_loaded) return;
+    if (!dt.isFinite) return;
+    // A non-finite transform would blank the whole frame; re-seed instead.
+    if (!_position.x.isFinite || !_position.z.isFinite || !_yaw.isFinite) {
+      respawn();
+    }
     // Sub-step long frames so slow devices keep real-time speed without
     // tunnelling through thin colliders.
     dt = dt.clamp(0.0, 0.4);
@@ -171,13 +176,30 @@ class GameRuntime {
   vm.Vector3 _desiredCameraTarget() =>
       vm.Vector3(_position.x, 0.9, _position.z - 0.6);
 
-  Camera get camera => PerspectiveCamera(
-    position: _cameraPos,
-    target: _cameraTarget,
-    fovRadiansY: 36 * vm.degrees2Radians,
-    fovNear: 0.5,
-    fovFar: 80,
-  );
+  Camera get camera {
+    // Never hand the renderer a degenerate camera (blank frame): fall back to
+    // the un-smoothed rig around the player if smoothing ever misbehaves.
+    var pos = _cameraPos, target = _cameraTarget;
+    final ok =
+        pos.x.isFinite &&
+        pos.y.isFinite &&
+        pos.z.isFinite &&
+        target.x.isFinite &&
+        target.y.isFinite &&
+        target.z.isFinite &&
+        (pos - target).length2 > 1e-6;
+    if (!ok) {
+      pos = _cameraPos = _desiredCameraPos();
+      target = _cameraTarget = _desiredCameraTarget();
+    }
+    return PerspectiveCamera(
+      position: pos,
+      target: target,
+      fovRadiansY: 36 * vm.degrees2Radians,
+      fovNear: 0.5,
+      fovFar: 80,
+    );
+  }
 
   void _applyPlayerTransform() {
     world.placePlayer(_position, _yaw);
