@@ -49,3 +49,6 @@ app.*.map.json
 
 # Agent browser-verification artifacts
 .playwright-mcp/
+
+# FlutterFlow AI MCP workspace (contains the API key and project snapshot)
+flutterflow_workspace/

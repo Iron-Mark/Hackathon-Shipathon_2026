@@ -73,6 +73,29 @@ deployed web build through a WebView:
 4. Recommended: landscape or full-screen page, WebGL2-capable device (any
    modern phone), hardware acceleration left on.
 
+### FlutterFlow MCP (build the FlutterFlow shell from Cursor)
+
+The repo is pre-wired for FlutterFlow's official MCP server
+(`flutterflow_cli` → `flutterflow ai mcp`), declared in `.cursor/mcp.json` as
+`flutterflow_ai`. One-time setup needs your FlutterFlow API key
+(FlutterFlow → Account → API Token; requires a plan with API access):
+
+```sh
+FF_API_KEY=<key> FF_PROJECT_ID=<existing project id, optional> bash tool/flutterflow_setup.sh
+```
+
+This installs the CLI and creates the git-ignored `flutterflow_workspace/`
+bound to your project (or a new app). Then reload MCP servers in Cursor,
+approve `flutterflow_ai`, and drive the FlutterFlow project from chat, e.g.:
+
+> Create a page `IronAscentGame` with a full-screen WebView (JavaScript
+> enabled) loading `https://iron-ascent-three.vercel.app/?embed=1`, a
+> JavaScript channel `IronAscent`, and navigate back when a message with
+> `"type":"exit"` arrives.
+
+Useful CLI checks from inside `flutterflow_workspace/`: `flutterflow ai status
+<project-id>`, `flutterflow ai doctor`, `flutterflow ai context-check`.
+
 ## Layout
 
 ```text

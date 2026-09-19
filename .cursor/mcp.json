@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "flutterflow_ai": {
+      "command": "flutterflow",
+      "args": [
+        "ai",
+        "mcp",
+        "--workspace",
+        "${workspaceFolder}/flutterflow_workspace"
+      ],
+      "env": {
+        "FF_API_KEY": "${env:FF_API_KEY}"
+      }
+    }
+  }
+}
