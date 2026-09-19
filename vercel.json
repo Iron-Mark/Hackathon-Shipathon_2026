@@ -3,5 +3,12 @@
   "framework": null,
   "installCommand": "echo 'no package install: Flutter web build'",
   "buildCommand": "bash tool/vercel_build.sh",
-  "outputDirectory": "build/web"
+  "outputDirectory": "build/web",
+  "redirects": [
+    {
+      "source": "/demo",
+      "destination": "/demo/",
+      "permanent": true
+    }
+  ]
 }
